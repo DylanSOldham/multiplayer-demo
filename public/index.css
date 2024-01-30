@@ -5,15 +5,17 @@ html {
 }
 
 body {
+  display: flex;
+  justify-content: center;
   width: 100%;
   height: 100%;
   margin: 0px;
-  background: red;
+  background: black;
 }
 
 canvas {
   display: block;
-  width: 100%;
   height: 100%;
+  aspect-ratio: 4/3;
   margin: 0px;
 };
