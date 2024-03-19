@@ -23,11 +23,13 @@ const DODGE_COOLDOWN = 0.2; // Seconds
 //---------------------------------------------------------------------------------------
 
 const kbd = {}; // Keyboard
+let just_kbd = {};
 const mse = {}; // Mouse
 
 const refreshKeys = () => {
     mse["just_left"] = false;
     mse["just_right"] = false;
+    just_kbd = {};
 }
 
 const updateMousePos = event => {
@@ -60,6 +62,7 @@ window.addEventListener("resize", event => {
 
 canvas.addEventListener("keydown", event => {
     kbd[event.code] = true;
+    just_kbd[event.code] = true;
 });
 
 canvas.addEventListener("keyup", event => {
@@ -154,7 +157,14 @@ const drawRect = (x, y, w, h, style) => {
     const body = world2screen(x, y, w, h);
     ctx.fillStyle = style;
     ctx.fillRect(body.x, body.y, body.w, body.h);
-}
+};
+
+const drawText = (text, x, y, size, style, align="center") => {
+    ctx.fillStyle = style;
+    ctx.textAlign = align;
+    ctx.font = `${size}px Sans-Serif`;
+    ctx.fillText(text, x, y);
+};
 
 const drawArc = (x, y, r1, r2, startangle, endangle, style) => {
     const body = world2screen(x, y, r1, r2);
@@ -165,11 +175,11 @@ const drawArc = (x, y, r1, r2, startangle, endangle, style) => {
     ctx.arc(body.x, body.y, r2, startangle, endangle);
     ctx.arc(body.x, body.y, r1, endangle, startangle, true);
     ctx.fill();
-}
+};
 
 const drawCircle = (x, y, r, style) => {
     return drawArc(x, y, 0, r, 0, 2 * Math.PI, style);
-}
+};
 
 
 
@@ -186,12 +196,14 @@ const canDodge = avatar => avatar.dodge_timer > DODGE_DURATION + DODGE_COOLDOWN;
 const canAttack = avatar => avatar.attack_timer > ATTACK_DURATION + ATTACK_COOLDOWN;
 
 let doDodge = false;
+let helpScreenActive = false;
 const updatePlayerAvatar = () => {
     const avatar = avatars[playerAvatarId];
 
     let dx = 0;
     let dy = 0;
 
+    if (just_kbd["KeyH"] || just_kbd["Escape"]) helpScreenActive = !helpScreenActive;
     if (kbd["ArrowUp"] || kbd["KeyW"]) dy -= AVATAR_SPEED;
     if (kbd["ArrowDown"] || kbd["KeyS"]) dy += AVATAR_SPEED;
     if (kbd["ArrowRight"] || kbd["KeyD"]) dx += AVATAR_SPEED;
@@ -238,6 +250,8 @@ const drawHealthbar = () => {
 }
 
 const drawAvatar = avatar => {
+    if (avatar.health <= 0) return;
+
     let alpha = isDodging(avatar) ? 0.6 : 1.0;
     let color = `rgba(${avatar.color.r}, ${avatar.color.g}, ${avatar.color.b}, ${alpha})`;
 
@@ -308,6 +322,46 @@ const drawSparkles = () => {
     }
 }
 
+let respawnAnimState = 3;
+const updateRespawnAnimState = () => {
+    respawnAnimState = respawnAnimState % 3 + 1;
+    setTimeout(updateRespawnAnimState, 1000);
+}
+updateRespawnAnimState();
+
+const drawEndScreen = () => {
+    ctx.fillStyle = "#00000088";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    drawText("Game Over", canvas.width/2, canvas.height/2, 48, "#FFFFFF");
+    drawText("Respawning", canvas.width/2, 28 * canvas.height/48, 32, "#FFFFFF");
+    drawText(".".repeat(respawnAnimState), canvas.width/2, 29 * canvas.height/48, 32, "#FFFFFF");
+};
+
+const drawHelpScreen = () => {
+    const GAP = 10;
+    ctx.fillStyle = "#00000088";
+    ctx.fillRect(GAP, GAP, canvas.width - 2 * GAP, canvas.height - 2 * GAP);
+    drawText("Help Menu", canvas.width/2, canvas.height/12, 48, "#FFFFFF");
+
+    const TITLE_SIZE = 36;
+    const TEXT_SIZE = 24;
+
+    drawText("Controls", canvas.width/24, 4 * canvas.height/24, TITLE_SIZE, "#FFFFFF", "left");
+    drawText("W - Move Up", canvas.width/12, 5 * canvas.height/24, TEXT_SIZE, "#FFFFFF", "left");
+    drawText("A - Move Left", canvas.width/12, 6 * canvas.height/24, TEXT_SIZE, "#FFFFFF", "left");
+    drawText("S - Move Down", canvas.width/12, 7 * canvas.height/24, TEXT_SIZE, "#FFFFFF", "left");
+    drawText("D - Move Right", canvas.width/12, 8 * canvas.height/24, TEXT_SIZE, "#FFFFFF", "left");
+    drawText("Left Click - Attack", canvas.width/12, 9 * canvas.height/24, TEXT_SIZE, "#FFFFFF", "left");
+    drawText("Right Click - Dodge", canvas.width/12, 10 * canvas.height/24, TEXT_SIZE, "#FFFFFF", "left");
+    drawText("Esc or H - Open or Close The Help Menu", canvas.width/12, 11 * canvas.height/24, TEXT_SIZE, "#FFFFFF", "left");
+
+    drawText("Game Info", canvas.width/24, 14 * canvas.height/24, TITLE_SIZE, "#FFFFFF", "left");
+    drawText("Move around and attack any circles you see. Those circles are controlled by other players!", canvas.width/12, 15 * canvas.height/24, TEXT_SIZE, "#FFFFFF", "left");
+    drawText("If you attack another player until their health reaches 0, they will disappear.", canvas.width/12, 16 * canvas.height/24, TEXT_SIZE, "#FFFFFF", "left");
+    drawText("If your health runs out, you lose.", canvas.width/12, 17 * canvas.height/24, TEXT_SIZE, "#FFFFFF", "left");
+    drawText("When you lose, you will disappear from the game and rejoin after a few seconds.", canvas.width/12, 18 * canvas.height/24, TEXT_SIZE, "#FFFFFF", "left");
+}
+
 const updateFrame = () => {
     updatePlayerAvatar();
     updateCamera();
@@ -318,7 +372,17 @@ const drawFrame = () => {
     drawSparkles();
     drawGrid();
     drawAvatars();
-    drawHealthbar();
+    if (avatars[playerAvatarId].health < 0)
+    {
+        drawEndScreen();
+    }
+    else
+    {
+        drawHealthbar();
+        if ( helpScreenActive ) {
+            drawHelpScreen();
+        }
+    }
 };
 
 
@@ -333,9 +397,6 @@ const step = () => {
     drawFrame();
     updateFrame();
     refreshKeys();
-
-    console.log(canvas.height);
-
     requestAnimationFrame(step);
 }
 

@@ -71,6 +71,7 @@ const initAvatar = (ws, id) =>
     angle: 0.0,
     attack_timer: 100.0,
     dodge_timer: 100.0,
+    respawn_timer: 0.0,
     color: randomColor(),
   };
 
@@ -136,7 +137,7 @@ const handleAttack = data =>
     {
         const otherAngle = Math.atan2(other.y - avatar.y, other.x - avatar.x);
         if (Math.abs(otherAngle - avatar.angle) < ATTACK_ANGLE_WIDTH / 2) {
-            other.health -= 5;
+            other.health -= 30;
         }
     }
   }
@@ -188,9 +189,23 @@ const CLEANUP_PERIOD = 1 * 1000;
 const updateAvatar = avatar => {
     const canDodge = () => avatar.dodge_timer > DODGE_DURATION + DODGE_COOLDOWN;
     const canAttack = () => avatar.attack_timer > ATTACK_DURATION + ATTACK_COOLDOWN;
+    const isDead = () => avatar.health <= 0;
 
     if (!canAttack(avatar)) avatar.attack_timer += 0.016;
     if (!canDodge(avatar)) avatar.dodge_timer += 0.016;
+
+    if (isDead(avatar)) 
+    {
+        avatar.respawn_timer += 0.016;
+        if (avatar.respawn_timer > 5.0)
+        {
+            avatar.respawn_timer = 0.0;
+            avatar.health = AVATAR_MAX_HEALTH;
+            avatar.x = Math.random() * WORLD_SIZE / 2.0;
+            avatar.y = Math.random() * WORLD_SIZE / 2.0;
+        }
+    }
+    
 }
 
 const updateAvatars = () => {
