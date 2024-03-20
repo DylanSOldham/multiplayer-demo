@@ -2,19 +2,20 @@
 // Global Constants
 //---------------------------------------------------------------------------------------
 
-const SERVER_URL = "ws://localhost:8081";
+console.log(window.location.hostname)
+const SERVER_URL = `ws://${window.location.hostname}:8081`;
 
 const AVATAR_SIZE = 5;
 const AVATAR_MAX_HEALTH = 100;
 const AVATAR_SPEED = 2;
-const AVATAR_DODGE_SPEED = 0;
+const AVATAR_DODGE_SPEED = 5;
 const WORLD_SIZE = 150;
 const ATTACK_DURATION = 0.1; // Seconds
 const ATTACK_COOLDOWN = 0.2; // Seconds
 const ATTACK_MIN_RADIUS = 1.0;
 const ATTACK_MAX_RADIUS = 10.0;
 const ATTACK_ANGLE_WIDTH = 2 * Math.PI / 3;
-const DODGE_DURATION = 1.0; // Seconds
+const DODGE_DURATION = 0.2; // Seconds
 const DODGE_COOLDOWN = 0.2; // Seconds
 
 
@@ -249,7 +250,16 @@ const drawHealthbar = () => {
     ctx.fillRect(5, 5, (avatar.health / AVATAR_MAX_HEALTH) * (canvas.width - 10), canvas.width / 50);
 }
 
-const drawAvatar = avatar => {
+const drawEnemyHealthbar = avatar => {
+    ctx.fillStyle = "#000000";
+
+    const HEALTHBAR_SIZE = 10;
+
+    drawRect(avatar.x - HEALTHBAR_SIZE / 2, avatar.y + 6, HEALTHBAR_SIZE, 1, "#000000")
+    drawRect(avatar.x - HEALTHBAR_SIZE / 2, avatar.y + 6, (avatar.health / AVATAR_MAX_HEALTH) * HEALTHBAR_SIZE, 1, "#00FF00")
+}
+
+const drawAvatar = (avatar, id) => {
     if (avatar.health <= 0) return;
 
     let alpha = isDodging(avatar) ? 0.6 : 1.0;
@@ -261,11 +271,15 @@ const drawAvatar = avatar => {
     {
         drawAttack(avatar);
     }
+
+    if (id !== playerAvatarId) {
+        drawEnemyHealthbar(avatar);
+    }
 }
 
 const drawAvatars = () => {
     for (let avatarId in avatars) {
-        drawAvatar(avatars[avatarId]);
+        drawAvatar(avatars[avatarId], avatarId);
     }
 }
 

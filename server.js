@@ -28,7 +28,7 @@ const ATTACK_COOLDOWN = 0.2; // Seconds
 const ATTACK_MIN_RADIUS = 1.0;
 const ATTACK_MAX_RADIUS = 10.0;
 const ATTACK_ANGLE_WIDTH = 2 * Math.PI / 3;
-const DODGE_DURATION = 1.0; // Seconds
+const DODGE_DURATION = 0.2; // Seconds
 const DODGE_COOLDOWN = 0.2; // Seconds
 
 
