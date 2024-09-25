@@ -16,5 +16,5 @@ death screen before being respawned at a random location after a few seconds.
 
 Clone this repository, and execute `npm i` inside the repository folder.
 
-To start the server, run `npm start`. You may then connect to it through a web browser by visiting `http://localhost:8080`
-(the port may be changed by setting the PORT environment variable.
+To start the server, run `npm start`. This will host the game over port 8080 by default (this can be changed by setting
+the `PORT` environment variable). You may connect to the game through a web browser. 
