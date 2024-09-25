@@ -1,5 +1,7 @@
+import * as shared from "./public/shared/shared.js"
+
 // Express setup adapted from https://expressjs.com/en/starter/hello-world.html
-const express = require("express");
+import express from "express";
 const app = express();
 const PORT = process.env.PORT || 8080;
 
@@ -8,31 +10,6 @@ app.use(express.static("./public")); //Line adapted from https://expressjs.com/e
 app.listen(PORT, () => {
   console.log(`Server is listening on port ${PORT}`);
 });
-
-
-
-
-
-
-//---------------------------------------------------------------------------------------
-// Global Constants
-//---------------------------------------------------------------------------------------
-
-const AVATAR_SIZE = 5;
-const AVATAR_MAX_HEALTH = 100;
-const AVATAR_SPEED = 2;
-const AVATAR_DODGE_SPEED = 5;
-const WORLD_SIZE = 150;
-const ATTACK_DURATION = 0.1; // Seconds
-const ATTACK_COOLDOWN = 0.2; // Seconds
-const ATTACK_MIN_RADIUS = 1.0;
-const ATTACK_MAX_RADIUS = 10.0;
-const ATTACK_ANGLE_WIDTH = 2 * Math.PI / 3;
-const DODGE_DURATION = 0.2; // Seconds
-const DODGE_COOLDOWN = 0.2; // Seconds
-
-
-
 
 
 
@@ -45,8 +22,8 @@ const avatars = {};
 const randomColor = () => { return {r: Math.random() * 255, g: Math.random() * 255, b: Math.random() * 255, a: 1.0} }
 
 const clampAvatarToWorld = avatar => {
-  avatar.x = Math.max(-WORLD_SIZE/2, Math.min(WORLD_SIZE/2, avatar.x));
-  avatar.y = Math.max(-WORLD_SIZE/2, Math.min(WORLD_SIZE/2, avatar.y));
+  avatar.x = Math.max(-shared.WORLD_SIZE/2, Math.min(shared.WORLD_SIZE/2, avatar.x));
+  avatar.y = Math.max(-shared.WORLD_SIZE/2, Math.min(shared.WORLD_SIZE/2, avatar.y));
 }
 
 
@@ -55,9 +32,8 @@ const clampAvatarToWorld = avatar => {
 // Client Communication
 //---------------------------------------------------------------------------------------
 
-// Websocket setup adapted from the "Simple server" example at https://www.npmjs.com/package/ws#usage-examples
-const WebSocket = require('ws');
-const wss = new WebSocket.Server({ port: 8081 });
+import WebSocket, { WebSocketServer } from 'ws';
+const wss = new WebSocketServer({ port: 8081 });
 
 let openSockets = [];
 
@@ -90,7 +66,7 @@ const sendAvatarsUpdate = () => {
       avatars: avatars
     };
   
-    for (s of openSockets)
+    for (let s of openSockets)
     {
       s.send(JSON.stringify(data));
     }
@@ -117,7 +93,7 @@ const handleAttack = data =>
   avatar.angle = data.angle;
   avatar.attack_timer = 0.0;
 
-  const isDodging = avatar => avatar.dodge_timer < DODGE_DURATION;
+  const isDodging = avatar => avatar.dodge_timer < shared.DODGE_DURATION;
 
   for (let id in avatars)
   {
@@ -187,8 +163,8 @@ wss.on("connection", (ws, req) => {
 const CLEANUP_PERIOD = 1 * 1000;
 
 const updateAvatar = avatar => {
-    const canDodge = () => avatar.dodge_timer > DODGE_DURATION + DODGE_COOLDOWN;
-    const canAttack = () => avatar.attack_timer > ATTACK_DURATION + ATTACK_COOLDOWN;
+    const canDodge = () => avatar.dodge_timer > shared.DODGE_DURATION + shared.DODGE_COOLDOWN;
+    const canAttack = () => avatar.attack_timer > shared.ATTACK_DURATION + shared.ATTACK_COOLDOWN;
     const isDead = () => avatar.health <= 0;
 
     if (!canAttack(avatar)) avatar.attack_timer += 0.016;
@@ -201,8 +177,8 @@ const updateAvatar = avatar => {
         {
             avatar.respawn_timer = 0.0;
             avatar.health = AVATAR_MAX_HEALTH;
-            avatar.x = Math.random() * WORLD_SIZE / 2.0;
-            avatar.y = Math.random() * WORLD_SIZE / 2.0;
+            avatar.x = Math.random() * shared.WORLD_SIZE / 2.0;
+            avatar.y = Math.random() * shared.WORLD_SIZE / 2.0;
         }
     }
     
@@ -210,7 +186,7 @@ const updateAvatar = avatar => {
 
 const updateAvatars = () => {
 
-    for (id in avatars)
+    for (let id in avatars)
     {
         updateAvatar(avatars[id]);
     }
@@ -223,7 +199,7 @@ const updateAvatars = () => {
 const cleanInactive = () => {
   for (let id in avatars)
   {
-    for (s of openSockets)
+    for (let s of openSockets)
     {
       s.send(`{"type": "ping"}`);
     }
@@ -238,4 +214,4 @@ const cleanInactive = () => {
 }
 
 setTimeout(cleanInactive, CLEANUP_PERIOD);
-setTimeout(updateAvatars, 10);
+setTimeout(updateAvatars, 1);

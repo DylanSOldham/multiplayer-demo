@@ -1,22 +1,11 @@
+import * as shared from "./shared/shared.js"
+
 //---------------------------------------------------------------------------------------
 // Global Constants
 //---------------------------------------------------------------------------------------
 
 console.log(window.location.hostname)
 const SERVER_URL = `ws://${window.location.hostname}:8081`;
-
-const AVATAR_SIZE = 5;
-const AVATAR_MAX_HEALTH = 100;
-const AVATAR_SPEED = 2;
-const AVATAR_DODGE_SPEED = 5;
-const WORLD_SIZE = 150;
-const ATTACK_DURATION = 0.1; // Seconds
-const ATTACK_COOLDOWN = 0.2; // Seconds
-const ATTACK_MIN_RADIUS = 1.0;
-const ATTACK_MAX_RADIUS = 10.0;
-const ATTACK_ANGLE_WIDTH = 2 * Math.PI / 3;
-const DODGE_DURATION = 0.2; // Seconds
-const DODGE_COOLDOWN = 0.2; // Seconds
 
 
 //---------------------------------------------------------------------------------------
@@ -191,12 +180,13 @@ const drawCircle = (x, y, r, style) => {
 let avatars = null;
 let playerAvatarId = null;
 
-const isDodging = avatar => avatar.dodge_timer < DODGE_DURATION;
-const isAttacking = avatar => avatar.attack_timer < ATTACK_DURATION;
-const canDodge = avatar => avatar.dodge_timer > DODGE_DURATION + DODGE_COOLDOWN;
-const canAttack = avatar => avatar.attack_timer > ATTACK_DURATION + ATTACK_COOLDOWN;
+const isDodging = avatar => avatar.dodge_timer < shared.DODGE_DURATION;
+const isAttacking = avatar => avatar.attack_timer < shared.ATTACK_DURATION;
+const canDodge = avatar => avatar.dodge_timer > shared.DODGE_DURATION + shared.DODGE_COOLDOWN;
+const canAttack = avatar => avatar.attack_timer > shared.ATTACK_DURATION + shared.ATTACK_COOLDOWN;
 
 let doDodge = false;
+let doAttack = false;
 let helpScreenActive = false;
 const updatePlayerAvatar = () => {
     const avatar = avatars[playerAvatarId];
@@ -205,13 +195,14 @@ const updatePlayerAvatar = () => {
     let dy = 0;
 
     if (just_kbd["KeyH"] || just_kbd["Escape"]) helpScreenActive = !helpScreenActive;
-    if (kbd["ArrowUp"] || kbd["KeyW"]) dy -= AVATAR_SPEED;
-    if (kbd["ArrowDown"] || kbd["KeyS"]) dy += AVATAR_SPEED;
-    if (kbd["ArrowRight"] || kbd["KeyD"]) dx += AVATAR_SPEED;
-    if (kbd["ArrowLeft"] || kbd["KeyA"]) dx -= AVATAR_SPEED;
-    if (kbd["Space"]) doDodge = true;
+    if (kbd["ArrowUp"] || kbd["KeyW"]) dy -= shared.AVATAR_SPEED;
+    if (kbd["ArrowDown"] || kbd["KeyS"]) dy += shared.AVATAR_SPEED;
+    if (kbd["ArrowRight"] || kbd["KeyD"]) dx += shared.AVATAR_SPEED;
+    if (kbd["ArrowLeft"] || kbd["KeyA"]) dx -= shared.AVATAR_SPEED;
+    if (just_kbd["Space"]) doDodge = true;
+    if (just_kbd["KeyL"]) doAttack = true;
 
-    if (canAttack(avatar) && mse["just_left"]) {
+    if (canAttack(avatar) && (mse["just_left"] || doAttack)) {
         avatar.angle = Math.atan2(mse.y - avatar.y, mse.x - avatar.x);
         sendAttack(avatar.angle);
     }
@@ -237,8 +228,8 @@ const updatePlayerAvatar = () => {
 
 const drawAttack = avatar => {
     drawArc(avatar.x, avatar.y, 
-        AVATAR_SIZE + ATTACK_MIN_RADIUS, AVATAR_SIZE + ATTACK_MAX_RADIUS, 
-        avatar.angle - ATTACK_ANGLE_WIDTH / 2, avatar.angle + ATTACK_ANGLE_WIDTH / 2, "#FF0000");
+        shared.AVATAR_SIZE + shared.ATTACK_MIN_RADIUS, shared.AVATAR_SIZE + shared.ATTACK_MAX_RADIUS, 
+        avatar.angle - shared.ATTACK_ANGLE_WIDTH / 2, avatar.angle + shared.ATTACK_ANGLE_WIDTH / 2, "#FF0000");
 }
 
 const drawHealthbar = () => {
@@ -247,7 +238,7 @@ const drawHealthbar = () => {
     ctx.fillStyle = "#000000";
     ctx.fillRect(5, 5, canvas.width - 10, canvas.width / 50);
     ctx.fillStyle = "#00FF00";
-    ctx.fillRect(5, 5, (avatar.health / AVATAR_MAX_HEALTH) * (canvas.width - 10), canvas.width / 50);
+    ctx.fillRect(5, 5, (avatar.health / shared.AVATAR_MAX_HEALTH) * (canvas.width - 10), canvas.width / 50);
 }
 
 const drawEnemyHealthbar = avatar => {
@@ -256,7 +247,7 @@ const drawEnemyHealthbar = avatar => {
     const HEALTHBAR_SIZE = 10;
 
     drawRect(avatar.x - HEALTHBAR_SIZE / 2, avatar.y + 6, HEALTHBAR_SIZE, 1, "#000000")
-    drawRect(avatar.x - HEALTHBAR_SIZE / 2, avatar.y + 6, (avatar.health / AVATAR_MAX_HEALTH) * HEALTHBAR_SIZE, 1, "#00FF00")
+    drawRect(avatar.x - HEALTHBAR_SIZE / 2, avatar.y + 6, (avatar.health / shared.AVATAR_MAX_HEALTH) * HEALTHBAR_SIZE, 1, "#00FF00")
 }
 
 const drawAvatar = (avatar, id) => {
@@ -265,7 +256,7 @@ const drawAvatar = (avatar, id) => {
     let alpha = isDodging(avatar) ? 0.6 : 1.0;
     let color = `rgba(${avatar.color.r}, ${avatar.color.g}, ${avatar.color.b}, ${alpha})`;
 
-    drawCircle(avatar.x, avatar.y, AVATAR_SIZE, color);
+    drawCircle(avatar.x, avatar.y, shared.AVATAR_SIZE, color);
 
     if (isAttacking(avatar)) // TODO - Move to separate draw layer
     {
@@ -296,7 +287,7 @@ const clearFrame = () => {
 let gridAnim = 0.0;
 
 const drawGrid = () => {
-    drawRect(-WORLD_SIZE / 2, -WORLD_SIZE / 2, WORLD_SIZE, WORLD_SIZE, "#12C956");
+    drawRect(-shared.WORLD_SIZE / 2, -shared.WORLD_SIZE / 2, shared.WORLD_SIZE, shared.WORLD_SIZE, "#12C956");
 
     gridAnim += 0.03;
     if (gridAnim > 2 * Math.PI) gridAnim = 0;
@@ -304,10 +295,10 @@ const drawGrid = () => {
     let spacing = 0.2 * Math.sin(gridAnim) + 0.8;
     const gridSize = 10;
 
-    let fullX = -WORLD_SIZE / 2;
-    let fullY = -WORLD_SIZE / 2;
-    let fullW = (WORLD_SIZE - spacing);
-    let fullH = (WORLD_SIZE - spacing);
+    let fullX = -shared.WORLD_SIZE / 2;
+    let fullY = -shared.WORLD_SIZE / 2;
+    let fullW = (shared.WORLD_SIZE - spacing);
+    let fullH = (shared.WORLD_SIZE - spacing);
 
     for (let i = 0; i < gridSize; ++i) {
         for (let j = 0; j < gridSize; ++j) {
@@ -329,8 +320,8 @@ const drawSparkles = () => {
 
     for (let i = 0; i < sparkles.length; ++i) {
         if (Math.random() < 0.1) {
-            sparkles[i].x = avatar.x + Math.random() * WORLD_SIZE * 2 - WORLD_SIZE / 2;
-            sparkles[i].y = avatar.y + Math.random() * WORLD_SIZE * 2 - WORLD_SIZE / 2;
+            sparkles[i].x = avatar.x + Math.random() * shared.WORLD_SIZE * 2 - shared.WORLD_SIZE / 2;
+            sparkles[i].y = avatar.y + Math.random() * shared.WORLD_SIZE * 2 - shared.WORLD_SIZE / 2;
         }
         drawCircle(sparkles[i].x, sparkles[i].y, Math.random(), `rgba(${255 * Math.random()}, 255, ${255 * Math.random()}, 1.0)`);
     }
@@ -357,8 +348,8 @@ const drawHelpScreen = () => {
     ctx.fillRect(GAP, GAP, canvas.width - 2 * GAP, canvas.height - 2 * GAP);
     drawText("Help Menu", canvas.width/2, canvas.height/12, 48, "#FFFFFF");
 
-    const TITLE_SIZE = 36;
-    const TEXT_SIZE = 24;
+    const TITLE_SIZE = 36 * canvas.width / 1024;
+    const TEXT_SIZE = 18 * canvas.width / 1024;
 
     drawText("Controls", canvas.width/24, 4 * canvas.height/24, TITLE_SIZE, "#FFFFFF", "left");
     drawText("W - Move Up", canvas.width/12, 5 * canvas.height/24, TEXT_SIZE, "#FFFFFF", "left");
@@ -366,7 +357,7 @@ const drawHelpScreen = () => {
     drawText("S - Move Down", canvas.width/12, 7 * canvas.height/24, TEXT_SIZE, "#FFFFFF", "left");
     drawText("D - Move Right", canvas.width/12, 8 * canvas.height/24, TEXT_SIZE, "#FFFFFF", "left");
     drawText("Left Click - Attack", canvas.width/12, 9 * canvas.height/24, TEXT_SIZE, "#FFFFFF", "left");
-    drawText("Right Click - Dodge", canvas.width/12, 10 * canvas.height/24, TEXT_SIZE, "#FFFFFF", "left");
+    drawText("Right Click - Dash", canvas.width/12, 10 * canvas.height/24, TEXT_SIZE, "#FFFFFF", "left");
     drawText("Esc or H - Open or Close The Help Menu", canvas.width/12, 11 * canvas.height/24, TEXT_SIZE, "#FFFFFF", "left");
 
     drawText("Game Info", canvas.width/24, 14 * canvas.height/24, TITLE_SIZE, "#FFFFFF", "left");
@@ -422,7 +413,7 @@ const step = () => {
 // Server Communication
 //---------------------------------------------------------------------------------------
 
-websocket = new WebSocket(SERVER_URL);
+let websocket = new WebSocket(SERVER_URL);
 websocket.addEventListener("open", event => {
     console.log(`Successfully connected to ${websocket.url}`);
 });
