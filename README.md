@@ -1,6 +1,6 @@
 # Real-Time Online Multiplayer Fighting Game Prototype
 
-![An image of the game with two players, one attacking the other.]("screenshot.png")
+![Screenshot](screenshot.png)
 
 ## Scope and Motivation
 
