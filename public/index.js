@@ -219,8 +219,8 @@ const updatePlayerAvatar = () => {
     }
 
     if (isDodging(avatar)) {
-        dx += AVATAR_DODGE_SPEED * Math.cos(avatar.angle);
-        dy += AVATAR_DODGE_SPEED * Math.sin(avatar.angle);
+        dx += shared.AVATAR_DODGE_SPEED * Math.cos(avatar.angle);
+        dy += shared.AVATAR_DODGE_SPEED * Math.sin(avatar.angle);
     }
 
     if (dx != 0 || dy != 0) sendMove(dx, dy);
@@ -258,7 +258,7 @@ const drawAvatar = (avatar, id) => {
 
     drawCircle(avatar.x, avatar.y, shared.AVATAR_SIZE, color);
 
-    if (isAttacking(avatar)) // TODO - Move to separate draw layer
+    if (isAttacking(avatar))
     {
         drawAttack(avatar);
     }
